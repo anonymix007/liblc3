@@ -91,6 +91,8 @@ class Base {
 
 // Encoder Class
 class Encoder : public Base<struct lc3_encoder> {
+  bool disable_ltpf_;
+
   template <typename T>
   int EncodeImpl(PcmFormat fmt, const T *pcm, int block_size, uint8_t *out) {
     if (states.size() != nchannels_) return -1;
@@ -126,14 +128,17 @@ class Encoder : public Base<struct lc3_encoder> {
   // sample rate `sr_hz`.
 
   Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0,
-          size_t nchannels = 1, bool hrmode = false)
-      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, hrmode) {
+          size_t nchannels = 1, bool hrmode = false, bool disable_ltpf = false)
+      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, hrmode), disable_ltpf_(disable_ltpf) {
     for (size_t ich = 0; ich < nchannels_; ich++) {
       auto s = state_ptr((lc3_encoder_t)
         malloc(lc3_hr_encoder_size(hrmode_, dt_us_, sr_pcm_hz_)), free);
 
-      if (lc3_hr_setup_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
+      if (lc3_hr_setup_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get())) {
+        if (disable_ltpf)
+          lc3_encoder_disable_ltpf(s.get());
         states.push_back(std::move(s));
+      }
     }
   }
 
@@ -142,8 +147,11 @@ class Encoder : public Base<struct lc3_encoder> {
   // Reset encoder state
 
   void Reset() {
-    for (auto &s : states)
+    for (auto &s : states) {
       lc3_hr_setup_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get());
+      if (disable_ltpf_)
+        lc3_encoder_disable_ltpf(s.get());
+    }
   }
 
   // Encode

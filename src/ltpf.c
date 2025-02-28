@@ -661,6 +661,12 @@ bool lc3_ltpf_analyse(
     enum lc3_dt dt, enum lc3_srate sr, struct lc3_ltpf_analysis *ltpf,
     const int16_t *x, struct lc3_ltpf_data *data)
 {
+    if (ltpf->disabled || lc3_hr(sr)) {
+        data->active = false;
+        ltpf->active = false;
+        return false;
+    }
+
     /* --- Resampling to 12.8 KHz --- */
 
     int z_12k8 = sizeof(ltpf->x_12k8) / sizeof(*ltpf->x_12k8);
@@ -719,11 +725,11 @@ bool lc3_ltpf_analyse(
             LC3_MAX(pitch, ltpf->pitch) - LC3_MIN(pitch, ltpf->pitch);
         float nc_diff = nc - ltpf->nc[0];
 
-        data->active = !lc3_hr(sr) && pitch_present &&
+        data->active = pitch_present &&
             ((nc > 0.9f) || (nc > 0.84f && pitch_diff < 8 && nc_diff > -0.1f));
 
      } else {
-         data->active = !lc3_hr(sr) && pitch_present &&
+         data->active = pitch_present &&
             ( (dt == LC3_DT_10M || ltpf->nc[1] > 0.94f) &&
               (ltpf->nc[0] > 0.94f && nc > 0.94f) );
      }

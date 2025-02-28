@@ -424,6 +424,12 @@ LC3_EXPORT struct lc3_encoder *lc3_setup_encoder(
     return lc3_hr_setup_encoder(false, dt_us, sr_hz, sr_pcm_hz, mem);
 }
 
+LC3_EXPORT void lc3_encoder_disable_ltpf(
+    lc3_encoder_t encoder)
+{
+    encoder->ltpf.disabled = true;
+}
+
 /**
  * Encode a frame
  */

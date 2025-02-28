@@ -98,6 +98,7 @@ struct lc3_ltpf_hp50_state {
 
 typedef struct lc3_ltpf_analysis {
     bool active;
+    bool disabled;
     int pitch;
     float nc[2];
 
